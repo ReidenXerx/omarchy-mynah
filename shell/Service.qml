@@ -60,7 +60,7 @@ Item {
     if (service.binIndex >= service.binCandidates.length) {
       service.bin = ""
       if (service.problem === "")
-        service.problem = "mynah is not installed. pipx install git+https://github.com/ReidenXerx/mynah.git"
+        service.problem = "mynah is not installed — see this plugin's README for the pinned install command."
       return
     }
     probe.command = [service.binCandidates[service.binIndex], "--version"]
@@ -249,7 +249,7 @@ Item {
     service.lastAttemptAt = now
     service.quickFailures = quick ? service.quickFailures + 1 : 1
     if (service.quickFailures >= 3 && service.problem === "")
-      service.problem = "mynah did not start. Install the CLI: pipx install git+https://github.com/ReidenXerx/mynah.git"
+      service.problem = "mynah did not start — see this plugin's README for the pinned install command."
   }
 
   function handle(raw) {

@@ -40,11 +40,19 @@ of it that belongs to the desktop:
 ## What you need
 
 ```bash
-pipx install git+https://github.com/ReidenXerx/mynah.git
-pipx inject mynah 'mynah[linux]'
-sudo pacman -S whisper-cpp wtype        # speech, and typing into the focused window
-mynah setup                             # checks each of these and names what is missing
+# The engine, pinned to the exact commit this plugin was reviewed against.
+pipx install "git+https://github.com/ReidenXerx/mynah.git@921589eef221d6cee060c9969571123ccabab50f"
+pipx inject mynah "mynah[linux] @ git+https://github.com/ReidenXerx/mynah.git@921589eef221d6cee060c9969571123ccabab50f"
+sudo pacman -S whisper-cpp wtype wl-clipboard   # speech, typing, and pasting
+mynah setup                                     # checks each and names what is missing
 ```
+
+**Why a commit and not a branch.** The plugin runs the engine, so installing it
+from a moving branch would mean the code this listing was reviewed against could
+be replaced afterwards by a later push. The pin is bumped deliberately, with the
+plugin, and re-reviewed. The name `mynah` on PyPI belongs to an unrelated
+package, which is why the extra is requested from this repository rather than by
+name.
 
 `mynah setup` also downloads the speech model, or tells you the one command that does. Nothing is
 uploaded, there is no account and no API key: the model runs on your machine, and the only thing

@@ -14,5 +14,5 @@ for candidate in "${HOME}/.local/bin/mynah" /usr/local/bin/mynah /usr/bin/mynah;
 done
 
 /usr/bin/notify-send --app-name=Mynah "Mynah" \
-  "The mynah CLI is not installed. pipx install git+https://github.com/ReidenXerx/mynah.git" || true
+  "The mynah CLI is not installed. See this plugin's README for the pinned install command." || true
 exit 1
