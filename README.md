@@ -1,0 +1,98 @@
+<div align="center">
+
+# Mynah for Omarchy
+
+**Say it. It types where you are.**
+
+Press <kbd>SUPER</kbd>+<kbd>ALT</kbd>+<kbd>D</kbd> and talk. Each time you pause, that sentence is
+transcribed on your own machine and typed into whatever window has focus — a commit message, a
+chat, a form. The bird in the bar shows what it is doing; a pill shows your voice while it listens.
+
+[![Omarchy plugin](https://img.shields.io/badge/omarchy-plugin-F5B301)](https://plugins.omarchy.org)
+[![License: MIT](https://img.shields.io/badge/license-MIT-F5B301)](LICENSE)
+
+`omarchy plugin add https://github.com/ReidenXerx/omarchy-mynah.git --enable`
+
+**[duduphudu.app/mynah](https://duduphudu.app/mynah/)** — what dictation itself does, and what it refuses to do
+
+</div>
+
+---
+
+## What this plugin is
+
+The dictation engine is [Mynah](https://github.com/ReidenXerx/mynah), a CLI. This plugin is the half
+of it that belongs to the desktop:
+
+- **The key.** No Wayland client may grab a global hotkey — that is the point of Wayland — so the
+  compositor binds it. The plugin registers <kbd>SUPER</kbd>+<kbd>ALT</kbd>+<kbd>D</kbd> at runtime
+  through `hl.bind`, and registers it again after a config reload, which drops runtime binds.
+- **The bird in the bar.** Dim when nothing is running, the bar's own colour when it is ready, the
+  accent while it listens, with your level moving beside it. Left click starts or ends a session;
+  right click is the menu.
+- **The pill.** While a session is open, a small pill sits above the bottom of the screen with a
+  live level and the last sentence that landed. It takes no keyboard focus and no clicks: you are
+  typing into another window, and nothing here may take that away.
+- **Keeping it running.** If nothing else is running the engine, the plugin runs it for the life of
+  the shell. If the systemd service already owns it, the plugin adopts that one instead of starting
+  a second engine to fight over the microphone.
+
+## What you need
+
+```bash
+pipx install git+https://github.com/ReidenXerx/mynah.git
+pipx inject mynah 'mynah[linux]'
+sudo pacman -S whisper-cpp wtype        # speech, and typing into the focused window
+mynah setup                             # checks each of these and names what is missing
+```
+
+`mynah setup` also downloads the speech model, or tells you the one command that does. Nothing is
+uploaded, there is no account and no API key: the model runs on your machine, and the only thing
+that leaves mynah is the text it types into the window you were already in.
+
+## Using it
+
+| | |
+|---|---|
+| <kbd>SUPER</kbd>+<kbd>ALT</kbd>+<kbd>D</kbd> | start dictating, and press again to stop |
+| Click the bird | the same thing |
+| Right click the bird | dictate now, start it at login, check what is missing, stop the service |
+| `mynah config` | what it is set to, and where |
+| `mynah set language=uk` | change one setting |
+
+The hotkey setting inside `mynah config` is a macOS thing and says so: here the compositor owns the
+key. To use a different one, unbind ours in Hyprland and bind your own to `mynah toggle`.
+
+## Settings worth knowing
+
+| Setting | What it does |
+|---|---|
+| `language` | the language you speak |
+| `model` | `base` is about three times faster than `small`; `small` hears you better |
+| `vad` | off means the whole session is transcribed at the end, instead of at each pause |
+| `frame_energy` | your floor for what counts as speech — lower hears more of the room |
+| `auto_stop_silence` | seconds of silence that end a session by themselves |
+
+## Latency, honestly
+
+Whisper encodes a 30-second window whatever you said, so the cost is per utterance rather than per
+second of speech. On a 22-core Meteor Lake laptop, CPU only: **`small` takes about 4.2 s** an
+utterance and gets the sentence right; **`base` takes about 1.5 s** and makes mistakes on hard
+words. Utterances pipeline — the next one is captured while the last is transcribed — but if you
+talk faster than your machine transcribes, text arrives further and further behind. Pick the model
+for the machine, and check with `mynah set model=base`.
+
+## Privacy
+
+- Speech is transcribed by whisper.cpp on your own hardware. There is no endpoint.
+- The utterance is written as a WAV into `$XDG_RUNTIME_DIR/mynah` — tmpfs, mode 0700, wiped at
+  logout — and unlinked as soon as whisper exits. It never reaches a disk.
+- The control socket lives in that same directory at mode 0600, and the engine refuses to serve a
+  directory it does not own: anything that can write there could make the machine dictate, and
+  anything that can read it would hear every word typed.
+- The pill shows the last sentence for four seconds and then forgets it. The plugin keeps no
+  history.
+
+## Licence
+
+MIT. The bird is Mynah's mark.

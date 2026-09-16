@@ -1,0 +1,31 @@
+{
+  "trigger.mynah": {
+    "icon": "󰍬",
+    "label": "Mynah",
+    "aliases": ["dictation", "dictate", "voice", "speech", "microphone"]
+  },
+  "trigger.mynah.toggle": {
+    "icon": "󰍬",
+    "label": "Dictate now",
+    "aliases": ["start dictation", "talk", "voice typing"],
+    "action": "mynah toggle"
+  },
+  "trigger.mynah.setup": {
+    "icon": "󰓾",
+    "label": "Check what is missing",
+    "aliases": ["mynah setup", "dictation setup", "install speech"],
+    "action": "/usr/bin/omarchy-launch-floating-terminal-with-presentation 'mynah setup'"
+  },
+  "trigger.mynah.settings": {
+    "icon": "󰒓",
+    "label": "Dictation settings",
+    "aliases": ["mynah config", "hotkey", "language", "model"],
+    "action": "/usr/bin/omarchy-launch-floating-terminal-with-presentation 'mynah config'"
+  },
+  "trigger.mynah.login": {
+    "icon": "󰐥",
+    "label": "Start dictation at login",
+    "aliases": ["mynah service", "autostart dictation"],
+    "action": "/usr/bin/omarchy-launch-floating-terminal-with-presentation 'mynah service install'"
+  }
+}
