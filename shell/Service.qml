@@ -40,6 +40,48 @@ Item {
   readonly property bool running: state !== "off"
   readonly property bool active: state === "listening" || state === "transcribing"
 
+  // ---------------------------------------------------------------- the CLI
+  //
+  // Resolved to an absolute path once, against a fixed list, rather than left
+  // to PATH: a plugin runs unsandboxed, and "run whatever `mynah` resolves to"
+  // is a promise about a search path we do not control. Nothing runs until one
+  // of these answers `--version`, and if none does, the widget says so instead.
+  readonly property var binCandidates: [
+    Quickshell.env("HOME") + "/.local/bin/mynah",   // where pipx puts it
+    "/usr/local/bin/mynah",
+    "/usr/bin/mynah"
+  ]
+  property string bin: ""
+  property int binIndex: 0
+
+  readonly property string hyprctl: "/usr/bin/hyprctl"
+
+  function resolveBin() {
+    if (service.binIndex >= service.binCandidates.length) {
+      service.bin = ""
+      if (service.problem === "")
+        service.problem = "mynah is not installed. pipx install git+https://github.com/ReidenXerx/mynah.git"
+      return
+    }
+    probe.command = [service.binCandidates[service.binIndex], "--version"]
+    probe.running = true
+  }
+
+  Process {
+    id: probe
+    onExited: function (code) {
+      if (code === 0) {
+        service.bin = service.binCandidates[service.binIndex]
+        service.problem = ""
+        service.bindKey()
+        adoptCheck.running = true
+        return
+      }
+      service.binIndex += 1
+      service.resolveBin()
+    }
+  }
+
   // ---------------------------------------------------------------- commands
 
   function toggle() { command("toggle") }
@@ -47,9 +89,18 @@ Item {
   function stopSession() { command("stop") }
 
   function command(verb) {
+    if (service.bin === "") return
     if (verb !== "toggle" && verb !== "start" && verb !== "stop" && verb !== "quit") return
-    control.command = ["mynah", verb]
+    control.command = [service.bin, verb]
     control.running = true
+    controlDeadline.restart()
+  }
+
+  // A command that never returns must not leave a process behind.
+  Timer {
+    id: controlDeadline
+    interval: 10000
+    onTriggered: if (control.running) control.signal(15)
   }
 
   // Stop dictating entirely: the engine exits and nothing restarts it until the
@@ -63,6 +114,11 @@ Item {
   function startUp() {
     service.stopped = false
     service.problem = ""
+    if (service.bin === "") {
+      service.binIndex = 0
+      service.resolveBin()
+      return
+    }
     adoptCheck.running = true
   }
 
@@ -82,7 +138,7 @@ Item {
 
   Process {
     id: handOverProcess
-    command: ["mynah", "service", "install"]
+    command: service.bin === "" ? [] : [service.bin, "service", "install"]
     stderr: SplitParser {
       splitMarker: "\n"
       onRead: function (line) { service.noteStderr(line) }
@@ -102,7 +158,7 @@ Item {
   // mynah, and two engines would fight over the microphone and the socket.
   Process {
     id: adoptCheck
-    command: ["mynah", "status"]
+    command: service.bin === "" ? [] : [service.bin, "status"]
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
@@ -113,7 +169,7 @@ Item {
     }
     onExited: function (code) {
       if (code !== 0) service.adopted = false
-      if (service.stopped) return
+      if (service.stopped || service.bin === "") return
       // Nobody else is running one, so we do. Asking again every time rather
       // than trusting the last answer matters: a systemd-owned engine can be
       // stopped while the shell keeps running, and a stale "adopted" would
@@ -127,7 +183,7 @@ Item {
   // lifetime for something that types into the session's windows.
   Process {
     id: engine
-    command: ["mynah"]
+    command: service.bin === "" ? [] : [service.bin]
     running: false
     stderr: SplitParser {
       splitMarker: "\n"
@@ -145,7 +201,7 @@ Item {
   // goes away. When it cannot connect there is no engine, so start one.
   Process {
     id: watcher
-    command: ["mynah", "watch"]
+    command: service.bin === "" ? [] : [service.bin, "watch"]
     running: false
     stdout: SplitParser {
       splitMarker: "\n"
@@ -174,7 +230,7 @@ Item {
     id: retry
     interval: service.retryDelay
     onTriggered: {
-      if (service.stopped) return
+      if (service.stopped || service.bin === "") return
       service.retryDelay = Math.min(service.retryDelay * 2, 60000)
       // Ask who owns the engine first; adoptCheck starts the watcher, and
       // ours, when there is nobody to adopt.
@@ -252,20 +308,21 @@ Item {
   // runtime. Runtime binds do not survive a config reload, hence the watch on
   // `configreloaded` below.
   readonly property string bindLua:
-    'hl.bind("' + hotkey + '", hl.dsp.exec_cmd("mynah toggle"), { description = "Mynah: dictate" })'
+    'hl.bind("' + hotkey + '", hl.dsp.exec_cmd("' + service.bin + ' toggle"), { description = "Mynah: dictate" })'
   readonly property string unbindLua: 'hl.unbind("' + hotkey + '")'
 
   Process { id: binder }
 
   function bindKey() {
-    binder.command = ["hyprctl", "eval", service.bindLua]
+    if (service.bin === "") return
+    binder.command = [service.hyprctl, "eval", service.bindLua]
     binder.running = true
   }
 
   function unbindKey() {
     // hl.unbind removes every binding on the combo, so this only runs for the
     // one we added — never on someone else's key.
-    binder.command = ["hyprctl", "eval", service.unbindLua]
+    binder.command = [service.hyprctl, "eval", service.unbindLua]
     binder.running = true
   }
 
@@ -296,10 +353,7 @@ Item {
     onLoaded: if (item) item.service = service
   }
 
-  Component.onCompleted: {
-    bindKey()
-    adoptCheck.running = true
-  }
+  Component.onCompleted: service.resolveBin()
 
   Component.onDestruction: unbindKey()
 }

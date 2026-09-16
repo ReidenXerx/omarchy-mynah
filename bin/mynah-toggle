@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+# Start or end a dictation session, for the Omarchy menu.
+#
+# The menu entry cannot resolve a binary at runtime the way the widget does, and
+# "whatever `mynah` resolves to on PATH" is not a promise this plugin can make —
+# a plugin runs unsandboxed. So the candidates are a fixed list of absolute
+# paths, tried in order, and it fails closed with a visible message.
+set -euo pipefail
+
+for candidate in "${HOME}/.local/bin/mynah" /usr/local/bin/mynah /usr/bin/mynah; do
+  if [ -x "${candidate}" ]; then
+    exec "${candidate}" toggle
+  fi
+done
+
+/usr/bin/notify-send --app-name=Mynah "Mynah" \
+  "The mynah CLI is not installed. pipx install git+https://github.com/ReidenXerx/mynah.git" || true
+exit 1

@@ -8,7 +8,7 @@
     "icon": "󰍬",
     "label": "Dictate now",
     "aliases": ["start dictation", "talk", "voice typing"],
-    "action": "mynah toggle"
+    "action": "/usr/bin/bash @PLUGIN_BIN@/mynah-toggle"
   },
   "trigger.mynah.setup": {
     "icon": "󰓾",
