@@ -185,9 +185,11 @@ BarWidget {
           id: mark
           anchors.verticalCenter: parent.verticalCenter
           anchors.left: parent.left
-          width: Style.space(16)
-          height: Style.space(16)
+          width: Style.space(17)
+          height: Style.space(17)
           color: root.stateColor
+          pose: root.state === "transcribing" ? "saying"
+              : root.state === "listening" ? "listening" : "rest"
           // Off means no engine; dim rather than gone, so the bar does not
           // jump when dictation stops.
           opacity: root.state === "off" ? 0.45 : 1

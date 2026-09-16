@@ -74,16 +74,18 @@ Scope {
 
         App.BirdMark {
           anchors.verticalCenter: parent.verticalCenter
-          width: Style.space(22)
-          height: Style.space(22)
+          width: Style.space(24)
+          height: Style.space(24)
           color: hud.state === "transcribing" ? Color.accent : Color.popups.text
+          // It cocks its head while it listens and opens its bill while it
+          // types: the pill shows what it is doing without reading a word.
+          pose: hud.state === "transcribing" ? "saying"
+              : hud.state === "listening" ? "listening" : "rest"
 
-          // While it listens the bird breathes; while it transcribes it is
-          // still, because that is the half-second where nothing is heard.
           SequentialAnimation on opacity {
             running: hud.state === "listening"
             loops: Animation.Infinite
-            NumberAnimation { to: 0.55; duration: 900; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 0.62; duration: 900; easing.type: Easing.InOutSine }
             NumberAnimation { to: 1.0; duration: 900; easing.type: Easing.InOutSine }
           }
           onOpacityChanged: if (hud.state !== "listening" && opacity !== 1) opacity = 1
