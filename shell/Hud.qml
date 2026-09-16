@@ -17,6 +17,7 @@ Scope {
   property var service: null
 
   readonly property string state: hud.service ? hud.service.state : "idle"
+  readonly property string hotkey: hud.service ? hud.service.hotkey : ""
   readonly property real level: hud.service ? hud.service.level : 0
   // The last utterance, for a few seconds after it landed.
   readonly property bool showText: !!hud.service && hud.service.lastText !== "" && textLife.running
@@ -122,9 +123,48 @@ Scope {
           anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText
           text: hud.state === "transcribing" ? "typing…" : "listening"
-          color: Color.muted
+          color: Color.popups.text
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
+        }
+
+        // How to stop. The pill is the only place it is written down: the key
+        // that started dictation is not on screen anywhere else, and a mic
+        // that is on with no visible way to turn it off is the thing people
+        // dislike most about dictation tools.
+        Row {
+          anchors.verticalCenter: parent.verticalCenter
+          spacing: Style.space(6)
+          visible: !hud.showText && hud.hotkey !== ""
+
+          Rectangle {
+            anchors.verticalCenter: parent.verticalCenter
+            implicitWidth: keyLabel.implicitWidth + Style.space(12)
+            implicitHeight: keyLabel.implicitHeight + Style.space(5)
+            radius: Style.space(5)
+            color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.10)
+            border.width: 1
+            border.color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.18)
+
+            Text {
+              id: keyLabel
+              anchors.centerIn: parent
+              textFormat: Text.PlainText
+              text: hud.hotkey
+              color: Color.popups.text
+              font.family: Style.font.family
+              font.pixelSize: Style.font.caption
+            }
+          }
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            textFormat: Text.PlainText
+            text: "to stop"
+            color: Color.muted
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+          }
         }
 
         // What landed in the window, briefly. Elided hard: this is a receipt,
