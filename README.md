@@ -109,6 +109,11 @@ for the machine, and check with `mynah set model=base`.
 - The pill shows the last sentence for four seconds and then forgets it. The plugin keeps no
   history.
 
+## Support
+
+If Mynah saves you typing, you can put something toward the next one:
+**[donatello.to/DuduPhudu](https://donatello.to/DuduPhudu)**.
+
 ## Licence
 
 MIT. The bird is Mynah's mark.
