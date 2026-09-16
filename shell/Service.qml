@@ -64,6 +64,34 @@ Item {
     adoptCheck.running = true
   }
 
+  // Hand the engine over to systemd.
+  //
+  // Installing the login service while the shell is running its own engine
+  // would start a second one, and the second refuses to bind a socket the
+  // first owns — so systemd would retry it three times and then report the
+  // service as failed, for what is really "it is already running". Ours stops
+  // first; the watcher then adopts the one systemd starts.
+  function installLoginService() {
+    engine.running = false
+    service.handOver.running = true
+  }
+
+  property alias handOver: handOverProcess
+
+  Process {
+    id: handOverProcess
+    command: ["mynah", "service", "install"]
+    stderr: SplitParser {
+      splitMarker: "\n"
+      onRead: function (line) { service.noteStderr(line) }
+    }
+    onExited: function (code) {
+      // Whether it worked or not, find out who owns the engine now.
+      service.adopted = false
+      adoptCheck.running = true
+    }
+  }
+
   Process { id: control }
 
   // ---------------------------------------------------------------- the engine

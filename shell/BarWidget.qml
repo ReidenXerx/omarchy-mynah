@@ -83,7 +83,7 @@ BarWidget {
     if (action === "toggle") root.mynah.toggle()
     else if (action === "start") root.mynah.startUp()
     else if (action === "quit") root.mynah.shutDown()
-    else if (action === "login") Quickshell.execDetached(["mynah", "service", "install"])
+    else if (action === "login") root.mynah.installLoginService()
     else if (action === "setup") {
       // setup asks questions and prints a list; it belongs in a terminal the
       // user can read and answer, not in a pipe.
