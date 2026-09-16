@@ -22,8 +22,10 @@ Item {
   // What the engine last said it was doing. "off" is ours, not the engine's: it
   // means nothing is answering on the socket.
   property string state: "off"
-  // Mic amplitude 0..1, ~30 a second while a session is open.
+  // Mic amplitude 0..1, ~30 a second while a session is open, and the frame's
+  // twelve band energies behind it (low to high) when the engine measures them.
   property real level: 0
+  property var bands: []
   // The last utterance that actually reached a window, and when.
   property string lastText: ""
   property double lastTextAt: 0
@@ -134,6 +136,7 @@ Item {
     onExited: function (code) {
       service.state = "off"
       service.level = 0
+      service.bands = []
       if (!service.stopped) retry.restart()
     }
   }
@@ -155,6 +158,7 @@ Item {
     onExited: function (code) {
       service.state = "off"
       service.level = 0
+      service.bands = []
       if (service.stopped) return
       service.noteAttemptFailed()
       retry.restart()
@@ -208,12 +212,14 @@ Item {
     if (event.event === "state") {
       const next = String(event.state || "")
       if (next === "idle" || next === "listening" || next === "transcribing") service.state = next
-      if (next === "idle") service.level = 0
+      if (next === "idle") { service.level = 0; service.bands = [] }
       return
     }
     if (event.event === "level") {
       const value = Number(event.level)
       if (isFinite(value)) service.level = Math.max(0, Math.min(1, value))
+      // Reassigned whole rather than edited, so bindings see the change.
+      service.bands = Array.isArray(event.bands) ? event.bands : []
       return
     }
     if (event.event === "text") {

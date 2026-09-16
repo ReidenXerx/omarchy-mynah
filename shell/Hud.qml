@@ -19,6 +19,7 @@ Scope {
   readonly property string state: hud.service ? hud.service.state : "idle"
   readonly property string hotkey: hud.service ? hud.service.hotkey : ""
   readonly property real level: hud.service ? hud.service.level : 0
+  readonly property var bands: hud.service ? hud.service.bands : []
   // The last utterance, for a few seconds after it landed.
   readonly property bool showText: !!hud.service && hud.service.lastText !== "" && textLife.running
 
@@ -94,34 +95,14 @@ Scope {
           onOpacityChanged: if (hud.state !== "listening" && opacity !== 1) opacity = 1
         }
 
-        // The level, as seven bars. Each one lags the next a little, so a
-        // syllable travels along the row instead of flashing all at once.
-        Row {
-          id: meter
+        // Your voice, in twelve bands. See Spectrum.qml.
+        Spectrum {
           anchors.verticalCenter: parent.verticalCenter
-          spacing: Style.space(3)
           visible: hud.state === "listening"
-
-          Repeater {
-            model: 7
-            delegate: Rectangle {
-              id: bar
-              required property int index
-              readonly property real weight: 1 - Math.abs(index - 3) * 0.13
-              width: Style.space(3)
-              radius: width / 2
-              color: Color.accent
-              anchors.verticalCenter: parent.verticalCenter
-              height: Style.space(4) + Style.space(22) * Math.min(1, hud.level * bar.weight * 1.6)
-
-              Behavior on height {
-                NumberAnimation {
-                  duration: 90 + bar.index * 12
-                  easing.type: Easing.OutQuad
-                }
-              }
-            }
-          }
+          running: hud.state === "listening"
+          bands: hud.service ? hud.service.bands : []
+          level: hud.level
+          color: Color.accent
         }
 
         Text {
