@@ -177,56 +177,24 @@ BarWidget {
     }
 
     iconComponent: Component {
+      // The bar loads this into a fixed 16px canvas and nothing clips it, so
+      // the icon must lay itself out INSIDE the space it is given. An earlier
+      // version put a level meter beside the bird and set implicitWidth for it;
+      // the canvas ignored that and the meter was drawn over the next icon.
+      // The bird carries its own sound now, in its own box.
       Item {
-        implicitWidth: mark.width + (meter.visible ? meter.width + Style.space(4) : 0)
-        implicitHeight: Math.max(mark.height, Style.space(14))
-
         App.BirdMark {
-          id: mark
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: parent.left
-          width: Style.space(17)
-          height: Style.space(17)
+          anchors.centerIn: parent
+          width: Math.min(parent.width, parent.height)
+          height: width
           color: root.stateColor
           pose: root.state === "transcribing" ? "saying"
               : root.state === "listening" ? "listening" : "rest"
+          waves: root.state === "listening" || root.state === "transcribing"
+          level: root.level
           // Off means no engine; dim rather than gone, so the bar does not
           // jump when dictation stops.
           opacity: root.state === "off" ? 0.45 : 1
-
-          SequentialAnimation on scale {
-            running: root.state === "transcribing"
-            loops: Animation.Infinite
-            NumberAnimation { to: 1.12; duration: 420; easing.type: Easing.InOutSine }
-            NumberAnimation { to: 1.0; duration: 420; easing.type: Easing.InOutSine }
-          }
-        }
-
-        // Three bars beside the bird while a session is open — the bar's own
-        // width changes, which is why they only exist while listening.
-        Row {
-          id: meter
-          anchors.verticalCenter: parent.verticalCenter
-          anchors.left: mark.right
-          anchors.leftMargin: Style.space(4)
-          spacing: Style.space(2)
-          visible: root.listening
-
-          Repeater {
-            model: 3
-            delegate: Rectangle {
-              id: bar
-              required property int index
-              readonly property real weight: index === 1 ? 1.0 : 0.72
-              width: Style.space(2)
-              radius: width / 2
-              color: Color.accent
-              anchors.verticalCenter: parent.verticalCenter
-              height: Style.space(3) + Style.space(11) * Math.min(1, root.level * bar.weight * 1.6)
-
-              Behavior on height { NumberAnimation { duration: 90 + bar.index * 15 } }
-            }
-          }
         }
       }
     }
