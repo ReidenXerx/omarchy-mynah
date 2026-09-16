@@ -63,6 +63,22 @@ that leaves mynah is the text it types into the window you were already in.
 The hotkey setting inside `mynah config` is a macOS thing and says so: here the compositor owns the
 key. To use a different one, unbind ours in Hyprland and bind your own to `mynah toggle`.
 
+## Removing it
+
+```bash
+omarchy plugin remove reidenxerx.mynah
+```
+
+That takes the bar widget and the pill with it, and the key binding goes when the shell
+reloads — the plugin registers it at runtime and never writes to your Hyprland config. What it
+does not remove is the engine, because that is a separate tool you installed yourself:
+
+```bash
+mynah service uninstall     # if you asked for it to start at login
+pipx uninstall mynah
+rm -rf ~/.config/mynah ~/.local/share/mynah   # settings and the speech model
+```
+
 ## Settings worth knowing
 
 | Setting | What it does |
