@@ -41,8 +41,8 @@ of it that belongs to the desktop:
 
 ```bash
 # The engine, pinned to the exact commit this plugin was reviewed against.
-pipx install "git+https://github.com/ReidenXerx/mynah.git@921589eef221d6cee060c9969571123ccabab50f"
-pipx inject mynah "mynah[linux] @ git+https://github.com/ReidenXerx/mynah.git@921589eef221d6cee060c9969571123ccabab50f"
+pipx install "git+https://github.com/ReidenXerx/mynah.git@b7d498d63b738050961d78fd22aa87b3f8b19e89"
+pipx inject mynah "mynah[linux] @ git+https://github.com/ReidenXerx/mynah.git@b7d498d63b738050961d78fd22aa87b3f8b19e89"
 sudo pacman -S whisper-cpp wtype wl-clipboard   # speech, typing, and pasting
 mynah setup                                     # checks each and names what is missing
 ```
@@ -54,9 +54,13 @@ plugin, and re-reviewed. The name `mynah` on PyPI belongs to an unrelated
 package, which is why the extra is requested from this repository rather than by
 name.
 
-`mynah setup` also downloads the speech model, or tells you the one command that does. Nothing is
-uploaded, there is no account and no API key: the model runs on your machine, and the only thing
-that leaves mynah is the text it types into the window you were already in.
+`mynah setup` also downloads the speech model, or tells you the one command that does. That command
+names a pinned revision of the model repository and checks what arrives against its published
+SHA-256, deleting it if it does not match: the file is handed to `whisper-cli`, which parses it as a
+native binary format, so it is not taken on trust from a moving URL.
+
+Nothing is uploaded, there is no account and no API key: the model runs on your machine, and the
+only thing that leaves mynah is the text it types into the window you were already in.
 
 ## Using it
 

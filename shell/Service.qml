@@ -67,8 +67,41 @@ Item {
     probe.running = true
   }
 
+  // A child process starts with whatever the shell was started with, and the
+  // shell is long-lived, so LD_PRELOAD, PYTHONPATH and PYTHONHOME would all
+  // reach the engine this plugin runs — and the engine is a pipx console
+  // script, which is to say a virtualenv interpreter, exactly the thing those
+  // variables redirect. Each process is handed an explicit environment instead.
+  //
+  // The list is what the engine actually uses: the runtime directory for its
+  // socket and for audio, the display and bus variables for typing into the
+  // window you were in, the Hyprland signature for hyprctl, and every MYNAH_*
+  // override it documents — scrubbing those would silently undo somebody's
+  // configuration. PATH keeps ~/.local/bin, which is where pipx puts mynah and
+  // where the engine looks for whisper-cli.
+  readonly property var childEnv: {
+    const env = {
+      "PATH": (Quickshell.env("HOME") || "") + "/.local/bin:/usr/local/bin:/usr/bin:/bin",
+      "PYTHONIOENCODING": "utf-8",
+    }
+    const wanted = [
+      "HOME", "LANG", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+      "XDG_CACHE_HOME", "XDG_CURRENT_DESKTOP", "WAYLAND_DISPLAY", "DISPLAY",
+      "DBUS_SESSION_BUS_ADDRESS", "PULSE_SERVER", "HYPRLAND_INSTANCE_SIGNATURE",
+      "MYNAH_CONFIG_DIR", "MYNAH_LEGACY_CONFIG", "MYNAH_MODEL_DIR", "MYNAH_SERVICE",
+      "MYNAH_SOCKET", "MYNAH_WHISPER_CLI", "MYNAH_WTYPE",
+    ]
+    for (const name of wanted) {
+      const value = Quickshell.env(name)
+      if (value) env[name] = value
+    }
+    return env
+  }
+
   Process {
     id: probe
+    clearEnvironment: true
+    environment: service.childEnv
     onExited: function (code) {
       if (code === 0) {
         service.bin = service.binCandidates[service.binIndex]
@@ -138,6 +171,8 @@ Item {
 
   Process {
     id: handOverProcess
+    clearEnvironment: true
+    environment: service.childEnv
     command: service.bin === "" ? [] : [service.bin, "service", "install"]
     stderr: SplitParser {
       splitMarker: "\n"
@@ -150,7 +185,7 @@ Item {
     }
   }
 
-  Process { id: control }
+  Process { id: control; clearEnvironment: true; environment: service.childEnv }
 
   // ---------------------------------------------------------------- the engine
 
@@ -158,6 +193,8 @@ Item {
   // mynah, and two engines would fight over the microphone and the socket.
   Process {
     id: adoptCheck
+    clearEnvironment: true
+    environment: service.childEnv
     command: service.bin === "" ? [] : [service.bin, "status"]
     stdout: StdioCollector {
       waitForEnd: true
@@ -183,6 +220,8 @@ Item {
   // lifetime for something that types into the session's windows.
   Process {
     id: engine
+    clearEnvironment: true
+    environment: service.childEnv
     command: service.bin === "" ? [] : [service.bin]
     running: false
     stderr: SplitParser {
@@ -201,6 +240,8 @@ Item {
   // goes away. When it cannot connect there is no engine, so start one.
   Process {
     id: watcher
+    clearEnvironment: true
+    environment: service.childEnv
     command: service.bin === "" ? [] : [service.bin, "watch"]
     running: false
     stdout: SplitParser {
@@ -311,7 +352,7 @@ Item {
     'hl.bind("' + hotkey + '", hl.dsp.exec_cmd("' + service.bin + ' toggle"), { description = "Mynah: dictate" })'
   readonly property string unbindLua: 'hl.unbind("' + hotkey + '")'
 
-  Process { id: binder }
+  Process { id: binder; clearEnvironment: true; environment: service.childEnv }
 
   function bindKey() {
     if (service.bin === "") return
