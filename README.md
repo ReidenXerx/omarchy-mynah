@@ -40,19 +40,25 @@ of it that belongs to the desktop:
 ## What you need
 
 ```bash
-MYNAH=f1ce92a0b3d8265fccce067e20d8560f1caf5173   # the engine commit this plugin was reviewed against
+MYNAH=f7722fc0b41a9428155bf4d8de8acd9f658534c6   # the engine commit this plugin was reviewed against
+LOCKS=https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements
 
-# The engine at that commit, with nothing resolved from PyPI yet.
-pipx install --pip-args="--no-deps" "git+https://github.com/ReidenXerx/mynah.git@$MYNAH"
+# A throwaway builder whose only build backend is the hash-verified one.
+python3 -m venv /tmp/mynah-build
+/tmp/mynah-build/bin/pip install --require-hashes --only-binary :all: -r $LOCKS/build.lock
 
-# What it imports: pinned versions, every artifact checked against its hash.
+# Build the engine with that backend and nothing else, then install the wheel,
+# which runs no build backend at all.
+/tmp/mynah-build/bin/pip wheel --no-build-isolation --no-deps -w /tmp/mynah-wheel \
+    "git+https://github.com/ReidenXerx/mynah.git@$MYNAH"
+pipx install --pip-args="--no-deps" /tmp/mynah-wheel/mynah-0.1.0-py3-none-any.whl
+
+# What the engine imports: pinned versions, every artifact checked against its hash.
+pipx runpip mynah install --require-hashes --only-binary :all: -r $LOCKS/build.lock
 pipx runpip mynah install --require-hashes --only-binary :all: \
-    --no-binary webrtcvad-wheels --no-build-isolation \
-    -r https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements/build.lock
-pipx runpip mynah install --require-hashes --only-binary :all: \
-    --no-binary webrtcvad-wheels --no-build-isolation \
-    -r https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements/linux.lock
+    --no-binary webrtcvad-wheels --no-build-isolation -r $LOCKS/linux.lock
 
+rm -rf /tmp/mynah-build /tmp/mynah-wheel
 sudo pacman -S whisper-cpp wtype wl-clipboard   # speech, typing, and pasting
 mynah setup                                     # checks each and names what is missing
 ```
@@ -73,6 +79,14 @@ wheel -- `webrtcvad-wheels` publishes none for CPython 3.14, which is what Arch
 ships -- and its source archive is hash-checked exactly like every wheel, built
 against a pinned `setuptools`, with pip's build isolation off so no unchecked
 build backend can take its place.
+
+**Why the engine is built rather than installed straight from git.** `pipx
+install git+...` builds the source distribution, and pip's build isolation
+fetches a build backend for that build from PyPI without checking it against
+anything; `--no-deps` does not turn isolation off. The two build commands above
+move that build somewhere the backend is already pinned and verified, and what
+pipx then installs is a wheel, which needs no backend at all. The engine is
+still the exact commit named above, and nothing else.
 
 `mynah setup` also downloads the speech model, or tells you the one command that does. That command
 names a pinned revision of the model repository and checks what arrives against its published
