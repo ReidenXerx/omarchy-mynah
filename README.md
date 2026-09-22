@@ -40,9 +40,19 @@ of it that belongs to the desktop:
 ## What you need
 
 ```bash
-# The engine, pinned to the exact commit this plugin was reviewed against.
-pipx install "git+https://github.com/ReidenXerx/mynah.git@b7d498d63b738050961d78fd22aa87b3f8b19e89"
-pipx inject mynah "mynah[linux] @ git+https://github.com/ReidenXerx/mynah.git@b7d498d63b738050961d78fd22aa87b3f8b19e89"
+MYNAH=f1ce92a0b3d8265fccce067e20d8560f1caf5173   # the engine commit this plugin was reviewed against
+
+# The engine at that commit, with nothing resolved from PyPI yet.
+pipx install --pip-args="--no-deps" "git+https://github.com/ReidenXerx/mynah.git@$MYNAH"
+
+# What it imports: pinned versions, every artifact checked against its hash.
+pipx runpip mynah install --require-hashes --only-binary :all: \
+    --no-binary webrtcvad-wheels --no-build-isolation \
+    -r https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements/build.lock
+pipx runpip mynah install --require-hashes --only-binary :all: \
+    --no-binary webrtcvad-wheels --no-build-isolation \
+    -r https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements/linux.lock
+
 sudo pacman -S whisper-cpp wtype wl-clipboard   # speech, typing, and pasting
 mynah setup                                     # checks each and names what is missing
 ```
@@ -53,6 +63,16 @@ be replaced afterwards by a later push. The pin is bumped deliberately, with the
 plugin, and re-reviewed. The name `mynah` on PyPI belongs to an unrelated
 package, which is why the extra is requested from this repository rather than by
 name.
+
+**Why the locks.** The engine commit fixes the code Mynah runs; the locks fix
+everything it imports. Installed with `--require-hashes`, pip refuses any
+artifact not named in them, so a package released after this listing was
+reviewed cannot reach a program that listens to a microphone and types into the
+focused window. One package is built from source rather than installed as a
+wheel -- `webrtcvad-wheels` publishes none for CPython 3.14, which is what Arch
+ships -- and its source archive is hash-checked exactly like every wheel, built
+against a pinned `setuptools`, with pip's build isolation off so no unchecked
+build backend can take its place.
 
 `mynah setup` also downloads the speech model, or tells you the one command that does. That command
 names a pinned revision of the model repository and checks what arrives against its published
