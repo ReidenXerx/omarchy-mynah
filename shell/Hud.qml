@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "../app" as App
 
@@ -60,11 +61,11 @@ Scope {
       implicitWidth: row.implicitWidth + Style.space(32)
       implicitHeight: Math.max(Style.space(52), row.implicitHeight + Style.space(20))
       radius: height / 2
-      color: Qt.rgba(Color.popups.background.r, Color.popups.background.g, Color.popups.background.b, 0.96)
+      color: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 0.96)
       border.width: 1
       border.color: hud.state === "listening"
-                    ? Qt.rgba(Color.accent.r, Color.accent.g, Color.accent.b, 0.55)
-                    : Qt.rgba(Color.muted.r, Color.muted.g, Color.muted.b, 0.35)
+                    ? Qt.rgba(Commons.Color.accent.r, Commons.Color.accent.g, Commons.Color.accent.b, 0.55)
+                    : Qt.rgba(Commons.Color.muted.r, Commons.Color.muted.g, Commons.Color.muted.b, 0.35)
 
       Behavior on border.color { ColorAnimation { duration: 180 } }
 
@@ -77,7 +78,7 @@ Scope {
           anchors.verticalCenter: parent.verticalCenter
           width: Style.space(28)
           height: Style.space(28)
-          color: hud.state === "transcribing" ? Color.accent : Color.popups.text
+          color: hud.state === "transcribing" ? Commons.Color.accent : Commons.Color.popups.text
           // It cocks its head while it listens and opens its bill while it
           // types, and makes a sound either way: the pill shows what it is
           // doing without reading a word.
@@ -102,14 +103,14 @@ Scope {
           running: hud.state === "listening"
           bands: hud.service ? hud.service.bands : []
           level: hud.level
-          color: Color.accent
+          color: Commons.Color.accent
         }
 
         Text {
           anchors.verticalCenter: parent.verticalCenter
           textFormat: Text.PlainText
           text: hud.state === "transcribing" ? "typing…" : "listening"
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           font.family: Style.font.family
           font.pixelSize: Style.font.caption
         }
@@ -128,16 +129,16 @@ Scope {
             implicitWidth: keyLabel.implicitWidth + Style.space(12)
             implicitHeight: keyLabel.implicitHeight + Style.space(5)
             radius: Style.space(5)
-            color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.10)
+            color: Qt.rgba(Commons.Color.popups.text.r, Commons.Color.popups.text.g, Commons.Color.popups.text.b, 0.10)
             border.width: 1
-            border.color: Qt.rgba(Color.popups.text.r, Color.popups.text.g, Color.popups.text.b, 0.18)
+            border.color: Qt.rgba(Commons.Color.popups.text.r, Commons.Color.popups.text.g, Commons.Color.popups.text.b, 0.18)
 
             Text {
               id: keyLabel
               anchors.centerIn: parent
               textFormat: Text.PlainText
               text: hud.hotkey
-              color: Color.popups.text
+              color: Commons.Color.popups.text
               font.family: Style.font.family
               font.pixelSize: Style.font.caption
             }
@@ -147,7 +148,7 @@ Scope {
             anchors.verticalCenter: parent.verticalCenter
             textFormat: Text.PlainText
             text: "to stop"
-            color: Color.muted
+            color: Commons.Color.muted
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
           }
@@ -160,7 +161,7 @@ Scope {
           visible: hud.showText
           textFormat: Text.PlainText
           text: hud.service ? hud.service.lastText : ""
-          color: Color.popups.text
+          color: Commons.Color.popups.text
           elide: Text.ElideLeft
           maximumLineCount: 1
           width: Math.min(implicitWidth, Style.space(320))

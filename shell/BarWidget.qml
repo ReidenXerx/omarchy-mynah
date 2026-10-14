@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Commons
+import qs.Commons as Commons
 import qs.Ui
 import "../app" as App
 
@@ -41,10 +42,10 @@ BarWidget {
   readonly property bool listening: root.state === "listening"
 
   readonly property color stateColor: {
-    if (root.state === "listening") return Color.accent
-    if (root.state === "transcribing") return Color.foreground
-    if (root.state === "off") return Color.muted
-    return root.bar ? root.bar.barForeground : Color.foreground
+    if (root.state === "listening") return Commons.Color.accent
+    if (root.state === "transcribing") return Commons.Color.foreground
+    if (root.state === "off") return Commons.Color.muted
+    return root.bar ? root.bar.barForeground : Commons.Color.foreground
   }
 
   readonly property string tooltip: {
@@ -117,7 +118,7 @@ BarWidget {
         textFormat: Text.PlainText
         text: root.mynah ? root.mynah.problem : ""
         wrapMode: Text.WordWrap
-        color: Color.muted
+        color: Commons.Color.muted
         font.family: Style.font.family
         font.pixelSize: Style.font.caption
         bottomPadding: Style.space(6)
@@ -132,7 +133,7 @@ BarWidget {
           width: parent.width
           height: Style.space(30)
           radius: Style.space(6)
-          color: entryHover.hovered ? Style.hoverFillFor(Color.popups.text, Color.accent) : "transparent"
+          color: entryHover.hovered ? Style.hoverFillFor(Commons.Color.popups.text, Commons.Color.accent) : "transparent"
 
           HoverHandler { id: entryHover }
 
@@ -145,7 +146,7 @@ BarWidget {
             textFormat: Text.PlainText
             text: entry.modelData.label
             elide: Text.ElideRight
-            color: entry.modelData.action === "quit" ? Color.urgent : Color.popups.text
+            color: entry.modelData.action === "quit" ? Commons.Color.urgent : Commons.Color.popups.text
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
             font.pixelSize: Style.font.body
           }

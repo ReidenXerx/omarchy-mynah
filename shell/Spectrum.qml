@@ -1,5 +1,6 @@
 import QtQuick
 import qs.Commons
+import qs.Commons as Commons
 
 // Your voice, as twelve bands of it.
 //
@@ -31,7 +32,7 @@ Item {
   property real level: 0
   property bool running: true
 
-  property color color: Color.accent
+  property color color: Commons.Color.accent
   property int count: 12
   property real barWidth: Style.space(3)
   property real gap: Style.space(2)
