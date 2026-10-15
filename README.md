@@ -40,7 +40,7 @@ of it that belongs to the desktop:
 ## What you need
 
 ```bash
-MYNAH=3bb252add0d6c81046bc55829b2482c055e41104   # the engine commit this plugin was reviewed against
+MYNAH=fcc10cc943a8d75a8f5190fbd13acf58721c9b0e   # the engine commit this plugin was reviewed against
 LOCKS=https://raw.githubusercontent.com/ReidenXerx/mynah/$MYNAH/requirements
 
 # Build the engine in a private directory of its own, with a build backend that

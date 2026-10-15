@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "reidenxerx.mynah",
   "name": "Mynah",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "ReidenXerx",
   "license": "MIT",
   "description": "Voice dictation on a key, for the window you are already in. Press SUPER+ALT+D and talk: each time you pause, that sentence is transcribed on your own machine and typed into whatever has focus. A bird in the bar shows what it is doing and a pill shows your voice while it listens. Needs the mynah CLI and whisper.cpp; nothing is uploaded and there is no account.",
