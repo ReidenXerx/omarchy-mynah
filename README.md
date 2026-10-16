@@ -132,7 +132,7 @@ engine commit that can type on Plasma, and `python-gobject` instead of `wtype`
 and `wl-clipboard`:
 
 ```bash
-MYNAH=e2ddb9637ecf0591a329767e26c4003a50b89357   # the first engine commit that types on Plasma
+MYNAH=45a6a54ccb4d552f83c8f7f5162db1dd1487543c   # the engine commit that types on Plasma
 # ...the same build and lock commands as above, then:
 sudo pacman -S whisper-cpp python-gobject     # Debian/Ubuntu: python3-gi; Fedora: python3-gobject
 mynah setup
@@ -147,6 +147,13 @@ asking next time".
 
 The widget runs the engine itself while Plasma runs, unless one is already
 running; "Start Mynah at login" in its panel installs the login service instead.
+
+One thing works differently on Plasma, and you should know it: because the text
+is pasted, it passes through the clipboard, and Plasma's clipboard (Klipper)
+keeps a history. What you dictate therefore appears in that history, which
+Klipper saves to disk unless you turn that off (Clipboard settings → "Save
+history across desktop sessions"), and Klipper offers no way for another program
+to keep an entry out of it. Your previous clipboard is always put back on top.
 
 ## Using it
 

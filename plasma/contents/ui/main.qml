@@ -16,16 +16,16 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
   id: root
 
-  readonly property string code: String(Qt.resolvedUrl("../code")).replace("file://", "")
+  readonly property string code: decodeURIComponent(String(Qt.resolvedUrl("../code")).replace("file://", ""))
   // What the engine is given of Plasma's environment: what it needs to find its socket, hear the microphone and
   // type into the window you are in, and every MYNAH_* override it documents.
-  readonly property string envPrefix: "/usr/bin/env -i HOME=\"$HOME\" LANG=\"$LANG\" PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin\""
-    + " PYTHONIOENCODING=utf-8 XDG_RUNTIME_DIR=\"$XDG_RUNTIME_DIR\" XDG_CONFIG_HOME=\"$XDG_CONFIG_HOME\""
-    + " XDG_DATA_HOME=\"$XDG_DATA_HOME\" XDG_CACHE_HOME=\"$XDG_CACHE_HOME\" XDG_STATE_HOME=\"$XDG_STATE_HOME\""
-    + " XDG_CURRENT_DESKTOP=\"$XDG_CURRENT_DESKTOP\" WAYLAND_DISPLAY=\"$WAYLAND_DISPLAY\" DISPLAY=\"$DISPLAY\""
-    + " DBUS_SESSION_BUS_ADDRESS=\"$DBUS_SESSION_BUS_ADDRESS\" PULSE_SERVER=\"$PULSE_SERVER\""
-    + " MYNAH_CONFIG_DIR=\"$MYNAH_CONFIG_DIR\" MYNAH_MODEL_DIR=\"$MYNAH_MODEL_DIR\" MYNAH_SOCKET=\"$MYNAH_SOCKET\""
-    + " MYNAH_WHISPER_CLI=\"$MYNAH_WHISPER_CLI\" "
+  // Each one only when it is set: an empty value is not the same as none (an empty MYNAH_CONFIG_DIR makes the config
+  // path relative, an empty PULSE_SERVER is an invalid server).
+  readonly property var passed: ["LANG", "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME",
+    "XDG_STATE_HOME", "XDG_CURRENT_DESKTOP", "WAYLAND_DISPLAY", "DISPLAY", "DBUS_SESSION_BUS_ADDRESS", "PULSE_SERVER",
+    "MYNAH_CONFIG_DIR", "MYNAH_MODEL_DIR", "MYNAH_SOCKET", "MYNAH_WHISPER_CLI"]
+  readonly property string envPrefix: "/usr/bin/env -i HOME=\"$HOME\" PATH=\"$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin\""
+    + " PYTHONIOENCODING=utf-8 " + root.passed.map(function (v) { return "${" + v + ":+" + v + "=\"$" + v + "\"}" }).join(" ") + " "
 
   function quote(s) { return "'" + String(s).replace(/'/g, "'\\''") + "'" }
 
@@ -96,13 +96,21 @@ PlasmoidItem {
       if (code === 3) { root.noEngine(); return }
       var reply = null
       try { reply = JSON.parse(out) } catch (e) { reply = null }
-      if (reply && typeof reply.state === "string" && /^[a-z]{1,16}$/.test(reply.state)) root.state = reply.state
+      if (reply && typeof reply.state === "string" && /^[a-z]{1,16}$/.test(reply.state)) {
+        root.state = reply.state
+        retry.stop()                                  // an engine answers: never start a second one
+        root.quickExits = 0
+        // A command's reply carries the state from before it took effect: look again in a moment.
+        if (command !== "status") Qt.callLater(function () { afterCommand.restart() })
+      }
       else if (reply && reply.ok === false) root.problem = String(reply.error || "Mynah refused that.").slice(0, 200)
     })
   }
 
+  Timer { id: afterCommand; interval: 250; onTriggered: root.ask("status") }
+
   function toggle() {
-    if (root.bin === "") { root.expanded = true; return }
+    if (root.bin === "") { root.resolve(0); root.notifyMissing(); return }
     if (root.state === "off") { root.startEngine(); root.pendingToggle = true; return }
     root.ask("toggle")
   }
@@ -134,12 +142,15 @@ PlasmoidItem {
       root.engineCommand = ""
       var err = String(data["stderr"] || "").trim().split("\n").pop()
       if (Number(data["exit code"]) !== 0 && err) root.problem = err.slice(0, 200)
+      // One that keeps stopping straight away is tried less and less often, up to every five minutes.
+      if (Date.now() - root.startedAt < 15000) root.quickExits++
       root.state = "off"
     }
   }
 
   function startEngine() {
-    if (root.engineCommand !== "" || root.bin === "") return
+    if (root.engineCommand !== "" || root.bin === "" || root.state !== "off") return
+    root.startedAt = Date.now()
     root.engineCommand = root.envPrefix + root.quote(root.bin)
     engineSource.connectSource(root.engineCommand)
     settle.restart()
@@ -162,12 +173,30 @@ PlasmoidItem {
     }
   }
 
+  property double startedAt: 0
+  property int quickExits: 0
+
   function noEngine() {
     root.state = "off"
-    if (root.engineCommand === "" && !retry.running) retry.restart()
+    if (root.engineCommand === "" && !retry.running) {
+      retry.interval = Math.min(300000, 10000 * Math.pow(2, Math.min(5, root.quickExits)))
+      retry.restart()
+    }
   }
 
-  Timer { id: retry; interval: 10000; onTriggered: root.startEngine() }
+  // Asks once more before starting anything: at login the login service's engine may only just be binding its
+  // socket, and a second engine would sit idle for ever beside it.
+  Timer {
+    id: retry
+    interval: 10000
+    onTriggered: root.run(root.envPrefix + "/usr/bin/python3 -I " + root.quote(root.code + "/bin/mynah-ask") + " status",
+                          function (code) { if (code === 3 && root.state === "off") root.startEngine() })
+  }
+
+  function notifyMissing() {
+    root.run("/usr/bin/notify-send --app-name=Mynah --icon=audio-input-microphone -- " + root.quote("Mynah is not installed")
+             + " " + root.quote("Its engine was not found. The widget's page has the install command."), null)
+  }
 
   // ---------------------------------------------------------------- the login service
 
@@ -188,6 +217,7 @@ PlasmoidItem {
 
   onExpandedChanged: function () {
     if (!root.expanded) return
+    if (root.bin === "") root.resolve(0)              // installed since the widget loaded
     if (Date.now() - root.activatedAt < 500) { Qt.callLater(function () { root.expanded = false }); return }
     root.ask("status")
     root.serviceCommand("status")
