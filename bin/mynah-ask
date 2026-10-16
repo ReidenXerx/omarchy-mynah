@@ -1,0 +1,45 @@
+#!/usr/bin/python3 -I
+"""mynah-ask <toggle|start|stop|status> -- one command to a running Mynah over its control socket.
+
+What the Plasma widget uses instead of the `mynah` CLI, because it asks often while you dictate and this starts in
+a few milliseconds where the CLI imports the whole engine. Prints the engine's one-line JSON answer; exits 3 when
+no Mynah is running.
+"""
+import json
+import os
+import socket
+import stat
+import sys
+
+COMMANDS = ("toggle", "start", "stop", "status")
+
+
+def socket_path() -> str:
+    override = os.environ.get("MYNAH_SOCKET", "")
+    if override.startswith("/"):
+        return override
+    return os.path.join(os.environ.get("XDG_RUNTIME_DIR", ""), "mynah", "control.sock")
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or sys.argv[1] not in COMMANDS:
+        print(__doc__.splitlines()[0], file=sys.stderr)
+        return 2
+    path = socket_path()
+    try:
+        info = os.lstat(path)
+        if not stat.S_ISSOCK(info.st_mode) or info.st_uid != os.getuid():
+            return 3
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(3)
+            s.connect(path)
+            s.sendall((json.dumps({"cmd": sys.argv[1]}) + "\n").encode())
+            reply = s.makefile("rb").readline(4096).decode("utf-8", "replace").strip()
+    except OSError:
+        return 3
+    print(reply)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

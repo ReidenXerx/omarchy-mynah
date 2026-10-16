@@ -112,6 +112,42 @@ native binary format, so it is not taken on trust from a moving URL.
 Nothing is uploaded, there is no account and no API key: the model runs on your machine, and the
 only thing that leaves mynah is the text it types into the window you were already in.
 
+## On KDE Plasma
+
+Mynah also comes as a Plasma 6 widget, for the panel or the system tray: the
+same bird, a pill at the bottom of the screen while you dictate, and its own
+keyboard shortcut to start and end a session. Install it from the KDE Store (Add
+Widgets → Get New Widgets → search "Mynah"), or build it here:
+
+```bash
+tools/build-plasma          # dist/mynah.plasmoid
+kpackagetool6 -t Plasma/Applet -i dist/app.duduphudu.mynah
+```
+
+Then give it a key: right click the bird → Configure Mynah… → Keyboard
+Shortcuts.
+
+The engine is installed exactly as above, with two differences: it needs the
+engine commit that can type on Plasma, and `python-gobject` instead of `wtype`
+and `wl-clipboard`:
+
+```bash
+MYNAH=e2ddb9637ecf0591a329767e26c4003a50b89357   # the first engine commit that types on Plasma
+# ...the same build and lock commands as above, then:
+sudo pacman -S whisper-cpp python-gobject     # Debian/Ubuntu: python3-gi; Fedora: python3-gobject
+mynah setup
+```
+
+Plasma gives ordinary programs no virtual keyboard, so on Plasma Mynah types by
+pasting: the text goes onto the clipboard through Klipper, paste is pressed
+through the desktop's RemoteDesktop portal (Ctrl+Shift+V when a terminal is in
+front), and your clipboard is put back a moment later. The first time, Plasma
+asks whether Mynah may control the keyboard: allow it, and tick "Allow without
+asking next time".
+
+The widget runs the engine itself while Plasma runs, unless one is already
+running; "Start Mynah at login" in its panel installs the login service instead.
+
 ## Using it
 
 | | |

@@ -1,0 +1,17 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Authors": [{ "Name": "DuduPhudu", "Email": "" }],
+    "Category": "Utilities",
+    "Description": "Voice dictation on a key: say it, and it types where you are. Speech is recognised on this computer by whisper.cpp; nothing is sent anywhere.",
+    "Icon": "audio-input-microphone",
+    "Id": "app.duduphudu.mynah",
+    "License": "MIT",
+    "Name": "Mynah",
+    "Version": "1.0.2",
+    "Website": "https://duduphudu.app/mynah/"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "X-Plasma-NotificationArea": "true",
+  "X-Plasma-NotificationAreaCategory": "ApplicationStatus"
+}

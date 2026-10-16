@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Assemble the Plasma widget: the plasma/ package, the bird mark and the socket client, into
+# dist/app.duduphudu.mynah and dist/mynah.plasmoid. The engine is installed on its own (see the README).
+set -euo pipefail
+root="$(cd "$(dirname "$0")/.." && pwd)"
+out="$root/dist/app.duduphudu.mynah"
+rm -rf -- "${out:?}" "$root/dist/mynah.plasmoid"
+mkdir -p "$out/contents/code/bin"
+cp -r "$root/plasma/." "$out/"
+cp "$root/app/BirdMark.qml" "$out/contents/ui/"
+cp "$root/bin/mynah-ask" "$out/contents/code/bin/"
+cp "$root/LICENSE" "$out/" 2>/dev/null || true
+chmod 755 "$out/contents/code/bin/mynah-ask"
+(cd "$out" && /usr/bin/zip -qr "$root/dist/mynah.plasmoid" .)
+echo "$out"
